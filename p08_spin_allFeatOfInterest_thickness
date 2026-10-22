@@ -1,0 +1,40 @@
+from neuromaps import stats, images, nulls
+from neuromaps.datasets import fetch_annotation
+from neuromaps.transforms import fslr_to_fsaverage
+from neuromaps.parcellate import Parcellater
+from neuromaps.images import dlabel_to_gifti
+from neuromaps.transforms import fslr_to_fsaverage
+from netneurotools import datasets as nntdata
+import neuromaps
+import pandas as pd
+import numpy as np
+import os
+
+filepath = os.getcwd()
+
+# thickness as mean from CamCAN
+thick_parc = pd.read_csv(filepath + '\\DATA\\thickness_mean4spin.csv', header = None)
+thick_parc = pd.DataFrame.to_numpy(thick_parc)
+
+# create rotated, still autocorrelated maps from the hierarchical annotation
+schaefer = nntdata.fetch_schaefer2018('fslr32k')['200Parcels7Networks'] # load our parcellation in order to parcellate the annoation according to our data
+rotated = nulls.alexander_bloch(thick_parc, atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+# read our matrix
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_thickness.csv', header = None)
+featuredata = featuredata.to_numpy()
+#featuredata = np.mean(featuredata,0)
+featuredata = featuredata.T
+nrow, ncol = featuredata.shape
+
+# calculate correlations of our feature data
+corr = []
+pval = []
+for i in range(0,featuredata.shape[1]):
+    icorr, ipval = stats.compare_images(thick_parc,featuredata[:,i], nulls=rotated)
+    corr.append(icorr)
+    pval.append(ipval)
+
+
+ 

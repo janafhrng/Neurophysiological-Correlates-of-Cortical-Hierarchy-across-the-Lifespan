@@ -1,0 +1,42 @@
+from neuromaps import stats, images, nulls
+from neuromaps.datasets import fetch_annotation
+from neuromaps.transforms import fslr_to_fsaverage
+from neuromaps.parcellate import Parcellater
+from neuromaps.images import dlabel_to_gifti
+from neuromaps.transforms import fslr_to_fsaverage
+from netneurotools import datasets as nntdata
+import neuromaps
+import pandas as pd
+import numpy as np
+import os
+
+# fetch annotation of the gradient along the hierarchical axis. Then parcellate this annotation according to the schäfer200 atlas (just like we parcellated our CamCAN data) 
+hierarchy = fetch_annotation(source='sydnor2021') # load hierarchy annotation (sydnor et al., 2021)
+schaefer = nntdata.fetch_schaefer2018('fslr32k')['200Parcels7Networks'] # load our parcellation in order to parcellate the annoation according to our data
+parc = Parcellater(dlabel_to_gifti(schaefer), 'fsLR') # fit the parcellator
+hierarchy_parc = parc.fit_transform(hierarchy, 'fsLR') # parcellate the data (archetypal gradient)
+np.savetxt('hierarchy_parc.csv', hierarchy_parc, delimiter=',', fmt='%s') # save this in order to plot
+
+# create rotated, still autocorrelated maps from the hierarchical annotation
+rotated = nulls.alexander_bloch(hierarchy_parc, atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+filepath = os.getcwd()
+
+# read our matrix
+featuredata = []
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_hierarchy.csv', header = None)
+featuredata = featuredata.to_numpy()
+#featuredata = np.mean(featuredata,0)
+featuredata = featuredata.T
+nrow, ncol = featuredata.shape
+
+# calculate correlations of our feature data
+corr = []
+pval = []
+for i in range(0,featuredata.shape[1]):
+    icorr, ipval = stats.compare_images(hierarchy_parc,featuredata[:,i], nulls=rotated)
+    corr.append(icorr)
+    pval.append(ipval)
+
+

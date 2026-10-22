@@ -1,0 +1,102 @@
+# just create the permutations for a script in matlab where we want to see which t-values can be expected
+from neuromaps import stats, images, nulls
+from neuromaps.datasets import fetch_annotation
+from neuromaps.transforms import fslr_to_fsaverage
+from neuromaps.parcellate import Parcellater
+from neuromaps.images import dlabel_to_gifti
+from neuromaps.transforms import fslr_to_fsaverage
+from netneurotools import datasets as nntdata
+import neuromaps
+import os
+import pandas as pd
+import numpy as np
+
+filepath = 'Z:\\TBraiC\\JF\\HCTSA feature gradients\\CamCan\\HierarchyCorrelates'
+
+
+## STATAVL ##
+
+# read our matrix
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_hierarchy.csv', header = None)
+featuredata = featuredata.to_numpy()
+featuredata.shape[0] # this should be 8 --> StatAvl100 is an der stelle 1, das heißt in python 0
+
+# create rotated, still autocorrelated maps from the hierarchical annotation
+schaefer = nntdata.fetch_schaefer2018('fslr32k')['200Parcels7Networks'] # load our parcellation in order to parcellate the annoation according to our data
+rotated = nulls.alexander_bloch(featuredata[0,:], atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+# save results
+np.savetxt(filepath + '\\DATA\\spins_StatAvl100_permutations.csv', rotated, delimiter=',', fmt='%s')
+
+
+
+
+## DELTA ## 
+
+# do the same thing for delta
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_hierarchy.csv', header = None)
+featuredata = featuredata.to_numpy()
+#featuredata = np.mean(featuredata,0)
+featuredata = featuredata.T
+nrow, ncol = featuredata.shape
+# this should be 8 --> delta is an der stelle 2, das heißt in python 1
+
+rotated = nulls.alexander_bloch(featuredata[:,1], atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+# save results
+np.savetxt(filepath + '\\DATA\\spins_delta_permutations.csv', rotated, delimiter=',', fmt='%s')
+
+
+
+
+## THETA ## 
+# do the same thing for theta
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_hierarchy.csv', header = None)
+featuredata = featuredata.to_numpy()
+#featuredata = np.mean(featuredata,0)
+featuredata = featuredata.T
+nrow, ncol = featuredata.shape
+# this should be 8 --> delta is an der stelle 2, das heißt in python 1
+
+rotated = nulls.alexander_bloch(featuredata[:,2], atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+# save results
+np.savetxt(filepath + '\\DATA\\spins_theta_permutations.csv', rotated, delimiter=',', fmt='%s')
+
+
+
+## ALPHA ## 
+# do the same thing for alpha
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_hierarchy.csv', header = None)
+featuredata = featuredata.to_numpy()
+#featuredata = np.mean(featuredata,0)
+featuredata = featuredata.T
+nrow, ncol = featuredata.shape
+# this should be 8 --> delta is an der stelle 2, das heißt in python 1
+
+rotated = nulls.alexander_bloch(featuredata[:,3], atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+# save results
+np.savetxt(filepath + '\\DATA\\spins_alpha_permutations.csv', rotated, delimiter=',', fmt='%s')
+
+
+
+
+## GAMMA ## 
+# do the same thing for gamma
+featuredata = pd.read_csv(filepath + '\\DATA\\feat4spin_hierarchy.csv', header = None)
+featuredata = featuredata.to_numpy()
+#featuredata = np.mean(featuredata,0)
+featuredata = featuredata.T
+nrow, ncol = featuredata.shape
+# this should be 8 --> delta is an der stelle 2, das heißt in python 1
+
+rotated = nulls.alexander_bloch(featuredata[:,5], atlas='fsLR', density='32k', parcellation=dlabel_to_gifti(schaefer),
+                                n_perm=50000, seed=1234)
+
+# save results
+np.savetxt(filepath + '\\DATA\\spins_gamma_permutations.csv', rotated, delimiter=',', fmt='%s')
