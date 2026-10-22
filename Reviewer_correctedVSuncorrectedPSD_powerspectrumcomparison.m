@@ -1,0 +1,407 @@
+clearvars;
+close all
+clc
+
+filepath = pwd;
+
+%% =======================================================================
+% WITH KNEE
+%% =======================================================================
+
+% load corrected power spectrum with fooof fitted with knee
+load([filepath '\DATA\all_subjects_fooof_knee_corrpsd.mat'])
+% load index of parcels to map to schäfer200
+load([filepath '\DATA\mapping_idx_camcan2schaefer']);
+
+power  = zeros(350,214,60);
+for i = 1:350 
+    power(i,:,:) = all_subjects_corrpsd{i};
+end
+
+power = power(:,tmp_idx,:);
+
+
+% DELTA --------------------------------------------------------------
+% we do not take 1 Hz --> problem with fitting
+delta = mean(power(:,:,2:3),3);
+delta_mean = mean(delta,1);
+
+% teilen druch gesamt power für eine Art der Normalisierung -------------------------------         
+power_overall = mean(power(:,:,2:60), 3, 'omitnan');  
+
+delta_norm = delta./power_overall;
+
+
+% THETA --------------------------------------------------------------
+theta = mean(power(:,:,4:7),3);
+theta_mean = mean(theta,1);
+
+% Normalisierung 
+theta_norm = theta./power_overall;
+
+
+% ALPHA --------------------------------------------------------------
+alpha = mean(power(:,:,8:13),3);
+alpha_mean = mean(alpha,1);
+
+%  Normalisierung 
+alpha_norm = alpha./power_overall;
+
+
+% BETA --------------------------------------------------------------
+beta = mean(power(:,:,14:30),3);
+beta_mean = mean(beta,1);
+
+% Normalisierung 
+beta_norm = beta./power_overall;
+
+
+% GAMMA --------------------------------------------------------------
+gamma = mean(power(:,:,31:60),3);
+gamma_mean = mean(gamma,1);
+
+% Normalisierung 
+gamma_norm = gamma./power_overall;
+
+
+% ALL --------------------------------------
+% z-scoring
+freqbands{1} = zscore(delta_norm,[],2); freqbands{2} = zscore(theta_norm,[],2); freqbands{3} = zscore(alpha_norm,[],2); freqbands{4} = zscore(beta_norm,[],2); freqbands{5} = zscore(gamma_norm,[],2); 
+
+
+%% plot
+parcellation = fetch_parcellation('fslr32k', 'schaefer', 200);
+[surf_lh, surf_rh] = fetch_template_surface('fslr32k', 'layer', 'inflated');
+load('vik.mat')
+
+% delta
+data2plot = mean(freqbands{1},1)
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+set(gcf,'units','points','position',[65,-65,1215,1215])
+colormap([0.7 0.7 0.7; vik])
+saveas(gcf,'x.png')
+I1 = imread('x.png');
+T1 = imcrop(I1, [180, 60, 555, 210]); % only left hemisphere
+Imerged = imtile({T1},  'BorderSize', 4, 'BackgroundColor', 'white','GridSize', [1,1]);
+imwrite(Imerged,[filepath '\PLOTS\corrected_delta_fooofWknee.png']);
+
+
+% theta
+data2plot = mean(freqbands{2},1)
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+set(gcf,'units','points','position',[65,-65,1215,1215])
+colormap([0.7 0.7 0.7; vik])
+saveas(gcf,'x.png')
+I1 = imread('x.png');
+T1 = imcrop(I1, [180, 60, 555, 210]); % only left hemisphere
+Imerged = imtile({T1},  'BorderSize', 4, 'BackgroundColor', 'white','GridSize', [1,1]);
+imwrite(Imerged,[filepath '\PLOTS\corrected_theta_fooofWknee.png']);
+
+
+% alpha
+data2plot = mean(freqbands{3},1)
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+set(gcf,'units','points','position',[65,-65,1215,1215])
+colormap([0.7 0.7 0.7; vik])
+saveas(gcf,'x.png')
+I1 = imread('x.png');
+T1 = imcrop(I1, [180, 60, 555, 210]); % only left hemisphere
+Imerged = imtile({T1},  'BorderSize', 4, 'BackgroundColor', 'white','GridSize', [1,1]);
+imwrite(Imerged,[filepath '\PLOTS\corrected_alpha_fooofWknee.png']);
+
+
+% beta
+data2plot = mean(freqbands{4},1)
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+set(gcf,'units','points','position',[65,-65,1215,1215])
+colormap([0.7 0.7 0.7; vik])
+saveas(gcf,'x.png')
+I1 = imread('x.png');
+T1 = imcrop(I1, [180, 60, 555, 210]); % only left hemisphere
+Imerged = imtile({T1},  'BorderSize', 4, 'BackgroundColor', 'white','GridSize', [1,1]);
+imwrite(Imerged,[filepath '\PLOTS\corrected_beta_fooofWknee.png']);
+
+
+% gamma
+data2plot = mean(freqbands{5},1)
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+set(gcf,'units','points','position',[65,-65,1215,1215])
+colormap([0.7 0.7 0.7; vik])
+saveas(gcf,'x.png')
+I1 = imread('x.png');
+T1 = imcrop(I1, [180, 60, 555, 210]); % only left hemisphere
+Imerged = imtile({T1},  'BorderSize', 4, 'BackgroundColor', 'white','GridSize', [1,1]);
+imwrite(Imerged,[filepath '\PLOTS\corrected_gamma_fooofWknee.png']);
+
+
+% SAVING
+for i = 1:5
+corrPowSpec(i,:,:) = freqbands{i};
+end
+save([filepath '\DATA\correctedPowSpec_fooofWknee_norm_z.mat'],'corrPowSpec');
+
+
+
+
+
+%% --------------------------------------------------------------
+% LMEM with the corrected power spectrum using the knee parameter
+%% --------------------------------------------------------------
+% loading hierarchy and age for the LMEM
+load([filepath '\DATA\hierarchy_parc.csv'])
+demographics = readtable([filepath '\DATA\demo_all_subjects.csv']);
+age_years = table2array(demographics(:,2));     
+
+% z-scoring
+freqbands{1} = zscore(delta_norm,[],2); freqbands{2} = zscore(theta_norm,[],2); freqbands{3} = zscore(alpha_norm,[],2); freqbands{4} = zscore(beta_norm,[],2); freqbands{5} = zscore(gamma_norm,[],2); 
+
+
+
+% lmem (allst row1= intercept, row2=hierarchy, row3=age, row4=interation)
+for ifreq = 1:5 % looping through the canonical frequency bands
+    subj=[];
+    parcel=[];
+    freq=[];
+    hierarchy=[];
+    age=[];
+    for k1=1:350 %subjects
+        subj=[subj ones(1,200)*k1];
+        parcel=[parcel 1:200];
+        freq=[freq freqbands{ifreq}(k1,:)];
+        hierarchy=[hierarchy hierarchy_parc'];
+        age = [age ones(1,200)*age_years(k1)];
+    end
+    varnames={'subj','parcel','freq','hierarchy','age'};
+    tbl=table(subj',parcel',freq',hierarchy',age','VariableNames',varnames);
+    model= 'freq ~ age*hierarchy + (1|subj) + (1|parcel)';
+
+    try
+        lme = fitlme(tbl,model);
+        allst_freqbands(ifreq,:)=lme.Coefficients.tStat;
+        pval_freqbands(ifreq,:)=lme.Coefficients.pValue;
+    end
+end
+
+
+
+
+% do the same with cortical thickness
+% participant number 306 is an outlier related to corticla thickness, thus
+% we do not use this data
+for i = 1:5
+    freqbands{i}(306,:) = [];
+end
+
+% loading cortical thickness
+load([filepath '\DATA\thickness_smoothed_12_schaefer200_reordered.mat']);
+thickness(306,:) = [];
+age_years(306,:) = [];   
+
+for ifreq = 1:5 % looping through the canonical frequency bands
+    subj=[];
+    parcel=[];
+    freq=[];
+    thick=[];
+    age=[];
+    for k1=1:349 %subjects
+        subj=[subj ones(1,200)*k1];
+        parcel=[parcel 1:200];
+        freq=[freq freqbands{ifreq}(k1,:)];
+        thick=[thick thickness(k1,:)];
+        age = [age ones(1,200)*age_years(k1)];
+    end
+    varnames={'subj','parcel','freq','thick','age'};
+    tbl=table(subj',parcel',freq',thick',age','VariableNames',varnames);
+    model= 'freq ~ age*thick + (1|subj) + (1|parcel)';
+
+    try
+        lme = fitlme(tbl,model);
+        allst_freqbands(ifreq,:)=lme.Coefficients.tStat;
+        pval_freqbands(ifreq,:)=lme.Coefficients.pValue;
+    end
+end
+
+
+
+
+
+
+
+%% =======================================================================
+% WITHOUT KNEE
+%% =======================================================================
+
+% load corrected power spectrum with fooof fitted with knee
+load([filepath '\DATA\all_subjects_fooof_noknee_corrpsd_Feb26.mat'])
+% load index of parcels to map to schäfer200
+load([filepath '\DATA\mapping_idx_camcan2schaefer']);
+
+power  = zeros(350,214,60);
+for i = 1:350 
+    power(i,:,:) = all_subjects_corrpsd{i};
+end
+
+power = power(:,tmp_idx,:);
+
+
+% DELTA --------------------------------------------------------------
+% we do not take 1 Hz --> problem with fitting
+delta = mean(power(:,:,2:3),3);
+delta_mean = mean(delta,1);
+
+% plot
+parcellation = fetch_parcellation('fslr32k', 'schaefer', 200);
+[surf_lh, surf_rh] = fetch_template_surface('fslr32k', 'layer', 'inflated');
+
+data2plot = delta_mean;
+vertex_delta = nan(size(parcellation));
+for i = 1:200
+    vertex_delta(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_delta, {surf_lh, surf_rh});
+
+
+% teilen druch gesamt power für eine Art der Normalisierung -------------------------------         
+power_overall = mean(power(:,:,2:60), 3, 'omitnan');  
+
+delta_norm = delta./power_overall;
+data2plot = delta_norm;
+vertex_delta_norm = nan(size(parcellation));
+for i = 1:200
+    vertex_delta_norm(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_delta_norm, {surf_lh, surf_rh});
+
+
+
+
+% THETA --------------------------------------------------------------
+theta = mean(power(:,:,4:7),3);
+theta_mean = mean(theta,1);
+
+data2plot = theta_mean;
+vertex_theta = nan(size(parcellation));
+for i = 1:200
+    vertex_theta(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_theta, {surf_lh, surf_rh});
+
+% Teilen durch alle positiven Werte für eine Art der Normalisierung -------------------------------
+theta_norm = theta./power_overall;
+data2plot = theta_norm;
+vertex_theta_norm = nan(size(parcellation));
+for i = 1:200
+    vertex_theta_norm(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_theta_norm, {surf_lh, surf_rh});
+
+
+
+
+% ALPHA --------------------------------------------------------------
+alpha = mean(power(:,:,8:13),3);
+alpha_mean = mean(alpha,1);
+
+data2plot = alpha_mean;
+vertex_alpha = nan(size(parcellation));
+for i = 1:200
+    vertex_alpha(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_alpha, {surf_lh, surf_rh});
+
+% Teilen durch alle positiven Werte für eine Art der Normalisierung -------------------------------
+alpha_norm = alpha./power_overall;
+data2plot = alpha_norm;
+vertex_alpha_norm = nan(size(parcellation));
+for i = 1:200
+    vertex_alpha_norm(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_alpha_norm, {surf_lh, surf_rh});
+
+
+
+
+% BETA --------------------------------------------------------------
+beta = mean(power(:,:,14:30),3);
+beta_mean = mean(beta,1);
+
+data2plot = beta_mean;
+vertex_beta = nan(size(parcellation));
+for i = 1:200
+    vertex_beta(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_beta, {surf_lh, surf_rh});
+
+% Teilen durch alle positiven Werte für eine Art der Normalisierung -------------------------------
+beta_norm = beta./power_overall;
+data2plot = beta_norm;
+vertex_beta_norm = nan(size(parcellation));
+for i = 1:200
+    vertex_beta_norm(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_beta_norm, {surf_lh, surf_rh});
+
+
+
+% GAMMA --------------------------------------------------------------
+gamma = mean(power(:,:,31:60),3);
+gamma_mean = mean(gamma,1);
+
+data2plot = gamma_mean;
+vertex_gamma = nan(size(parcellation));
+for i = 1:200
+    vertex_gamma(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_gamma, {surf_lh, surf_rh});
+
+% Teilen durch alle positiven Werte für eine Art der Normalisierung -------------------------------
+gamma_norm = gamma./power_overall;
+data2plot = gamma_norm;
+vertex_gamma_norm = nan(size(parcellation));
+for i = 1:200
+    vertex_gamma_norm(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_gamma_norm, {surf_lh, surf_rh});
+
+
+
+
+% ALL --------------------------------------
+% not normalized
+obj = plot_hemispheres([vertex_delta,vertex_theta,vertex_alpha,vertex_beta,vertex_gamma], {surf_lh, surf_rh});
+
+% normalized
+obj = plot_hemispheres([vertex_delta_norm,vertex_theta_norm,vertex_alpha_norm,vertex_beta_norm,vertex_gamma_norm], {surf_lh, surf_rh});
+
+% power overall
+data2plot = power_overall;
+vertex_power_overall = nan(size(parcellation));
+for i = 1:200
+    vertex_power_overall(parcellation == i) = data2plot(i);
+end
+obj = plot_hemispheres(vertex_power_overall, {surf_lh, surf_rh});

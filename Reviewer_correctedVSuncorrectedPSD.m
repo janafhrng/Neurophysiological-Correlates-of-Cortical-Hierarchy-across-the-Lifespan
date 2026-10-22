@@ -1,0 +1,314 @@
+%% how is alpha power affected by the aperiodic slope
+% comparing delta power, corrected delta power for aperiodic slope with
+% knee and without knee
+
+clearvars;
+close all
+clc
+
+filepath = pwd;
+
+
+%% delta without correction:
+
+% loading the the power of different freq bands over all parcels
+load([filepath '\DATA\03_specData_freqbands_norm.mat'])
+
+load([filepath '\DATA\hierarchy_parc.csv'])
+
+demographics = readtable([filepath '\DATA\demo_all_subjects.csv']);
+age_years = table2array(demographics(:,2));     
+
+% lme to find whether canonical power spectrum features can also descibe cortical hierachry?
+freqbands{1} = zscore(delta_norm,[],2); 
+freqbands{3} = zscore(alpha_norm,[],2); 
+
+% lmem (allst row1= intercept, row2=hierarchy, row3=age, row4=interation)
+for ifreq = 1 % looping through the canonical frequency bands
+    subj=[];
+    parcel=[];
+    freq=[];
+    hierarchy=[];
+    age=[];
+    for k1=1:350 %subjects
+        subj=[subj ones(1,200)*k1];
+        freq=[freq freqbands{ifreq}(k1,:)];
+        hierarchy=[hierarchy hierarchy_parc'];
+        age = [age ones(1,200)*age_years(k1)];
+    end
+    varnames={'subj','freq','hierarchy','age'};
+    tbl=table(subj',freq',hierarchy',age','VariableNames',varnames);
+    model= 'freq ~ age*hierarchy + (1|subj)';
+
+    try
+        lme = fitlme(tbl,model);
+        allst_freqbands(ifreq,:)=lme.Coefficients.tStat;
+        pval_freqbands(ifreq,:)=lme.Coefficients.pValue;
+    end
+end
+
+
+
+
+
+
+%% CORRECTED POWER SPECTRUM FOR APERIODIC SLOPE
+
+load([filepath '\DATA\all_subjects_fooof_noknee_corrpsd_Feb26.mat'])
+
+% load index of parcels
+load([filepath '\DATA\mapping_idx_camcan2schaefer']);
+
+% now we restucture this into 1 matrix containing: 
+% parciticpants x parcels x features
+mat  = zeros(350,214,60);
+for i = 1:350 
+    mat(i,:,:) = all_subjects_corrpsd{1,i};
+end
+
+% change the sorting of the data matrix from fsaverage to schäfer200
+% look at the matrix only at the schäfer200 positions
+mat = mat(:,tmp_idx,:);
+
+% remove 3 participants --> weird outliers
+mat(56:58,:,:) = NaN;
+
+% find mean across frequencies + normalize across all freq
+delta =  mean(mat(:,:,2:3),3,'omitnan');
+theta =  mean(mat(:,:,4:7),3,'omitnan');
+alpha =  mean(mat(:,:,8:13),3,'omitnan');
+beta =  mean(mat(:,:,14:30),3,'omitnan');
+gamma =  mean(mat(:,:,31:60),3,'omitnan');
+
+
+% lme to find whether canonical power spectrum features can also descibe cortical hierachry?
+freqbands{1} = zscore(delta,[],2); freqbands{2} = zscore(theta,[],2); freqbands{3} = zscore(alpha,[],2); freqbands{4} = zscore(beta,[],2); freqbands{5} = zscore(gamma,[],2); 
+
+
+% lmem (allst row1= intercept, row2=hierarchy, row3=age, row4=interation)
+for ifreq = 1 % looping through the canonical frequency bands
+    subj=[];
+    parcel=[];
+    freq=[];
+    hierarchy=[];
+    age=[];
+    for k1=1:350 %subjects
+        subj=[subj ones(1,200)*k1];
+        freq=[freq freqbands{ifreq}(k1,:)];
+        hierarchy=[hierarchy hierarchy_parc'];
+        age = [age ones(1,200)*age_years(k1)];
+    end
+    varnames={'subj','freq','hierarchy','age'};
+    tbl=table(subj',freq',hierarchy',age','VariableNames',varnames);
+    model= 'freq ~ age*hierarchy + (1|subj)';
+
+    try
+        lme = fitlme(tbl,model);
+        allst_freqbands(ifreq,:)=lme.Coefficients.tStat;
+        pval_freqbands(ifreq,:)=lme.Coefficients.pValue;
+    end
+end
+
+
+
+
+
+%% CORRECTED POWER SPECTRUM FOR APERIODIC SLOPE AND KNEE PARAMETER
+
+load([filepath '\DATA\all_subjects_fooof_knee_corrpsd.mat'])
+
+% load index of parcels
+load([filepath '\DATA\mapping_idx_camcan2schaefer']);
+
+% now we restucture this into 1 matrix containing: 
+% parciticpants x parcels x features
+mat  = zeros(350,214,60);
+for i = 1:350 
+    mat(i,:,:) = all_subjects_corrpsd{i};
+end
+
+% change the sorting of the data matrix from fsaverage to schäfer200
+% look at the matrix only at the schäfer200 positions
+mat = mat(:,tmp_idx,:);
+
+% find mean across frequencies + normalize across all freq
+delta =  mean(mat(:,:,2:3),3,'omitnan');
+theta =  mean(mat(:,:,4:7),3,'omitnan');
+alpha =  mean(mat(:,:,8:13),3,'omitnan');
+beta =  mean(mat(:,:,14:30),3,'omitnan');
+gamma =  mean(mat(:,:,31:60),3,'omitnan');
+
+
+parcellation = fetch_parcellation('fslr32k', 'schaefer', 200);
+[surf_lh, surf_rh] = fetch_template_surface('fslr32k', 'layer', 'inflated');
+
+data2plot = mean(delta,1);
+
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = my_values(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+
+
+% lme to find whether canonical power spectrum features can also descibe cortical hierachry?
+freqbands{1} = zscore(delta,[],2); freqbands{2} = zscore(theta,[],2); freqbands{3} = zscore(alpha,[],2); freqbands{4} = zscore(beta,[],2); freqbands{5} = zscore(gamma,[],2); 
+
+% lmem (allst row1= intercept, row2=hierarchy, row3=age, row4=interation)
+for ifreq = 1:5 % looping through the canonical frequency bands
+    subj=[];
+    parcel=[];
+    freq=[];
+    hierarchy=[];
+    age=[];
+    for k1=1:350 %subjects
+        subj=[subj ones(1,200)*k1];
+        freq=[freq freqbands{ifreq}(k1,:)];
+        hierarchy=[hierarchy hierarchy_parc'];
+        age = [age ones(1,200)*age_years(k1)];
+    end
+    varnames={'subj','freq','hierarchy','age'};
+    tbl=table(subj',freq',hierarchy',age','VariableNames',varnames);
+    model= 'freq ~ age*hierarchy + (1|subj)';
+
+    try
+        lme = fitlme(tbl,model);
+        allst_freqbands(ifreq,:)=lme.Coefficients.tStat;
+        pval_freqbands(ifreq,:)=lme.Coefficients.pValue;
+    end
+end
+
+
+
+
+
+%% with cortical hierarchy
+for i = 1:5
+    freqbands{i}(306,:) = [];
+end
+
+% loading cortical thickness
+load([filepath '\DATA\thickness_smoothed_12_schaefer200_reordered.mat']);
+thickness(306,:) = [];
+
+age_years(306,:) = [];   
+
+for ifreq = 1:5 % looping through the canonical frequency bands
+    subj=[];
+    parcel=[];
+    freq=[];
+    thick=[];
+    age=[];
+    for k1=1:349 %subjects
+        subj=[subj ones(1,200)*k1];
+        freq=[freq freqbands{ifreq}(k1,:)];
+        thick=[thick thickness(k1,:)];
+        age = [age ones(1,200)*age_years(k1)];
+    end
+    varnames={'subj','freq','thick','age'};
+    tbl=table(subj',freq',thick',age','VariableNames',varnames);
+    model= 'freq ~ age*thick + (1|subj)';
+
+    try
+        lme = fitlme(tbl,model);
+        allst_freqbands(ifreq,:)=lme.Coefficients.tStat;
+        pval_freqbands(ifreq,:)=lme.Coefficients.pValue;
+    end
+end
+
+
+%% plot
+[surf_lh, surf_rh] = load_conte69();
+labeling = load_parcellation('schaefer',200);
+
+
+obj = plot_hemispheres(mean(delta,1,"omitmissing")', {surf_lh,surf_rh}, ...
+    'parcellation',labeling.schaefer_200)
+load('vik.mat')
+colormap([0.7 0.7	0.7;vik])
+set(gcf,'units','points','position',[50,-50,1200,1200])
+saveas(gcf,['x.png'])
+images = imcrop(imread(['x.png']),[170, 30, 1105, 270]);
+%imwrite(images,[filepath '\PLOTS\topo_StatAvl100.png']);
+
+
+
+
+
+
+parcellation = fetch_parcellation('fslr32k', 'schaefer', 200);
+[surf_lh, surf_rh] = fetch_template_surface('fslr32k', 'layer', 'inflated');
+
+data2plot = mean(delta,1);
+
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = my_values(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+
+
+
+%% PLOTTING 1/F slop
+
+load([filepath '\DATA\all_subjects_fooof_exp_knee.mat'])
+load([filepath '\DATA\all_subjects_fooof_offs_knee.mat'])
+
+% now we restucture this into 1 matrix containing: 
+% parciticpants x parcels x features
+mat  = zeros(350,214);
+for i = 1:350 
+    mat(i,:) = all_subjects_exponent{i};
+end
+
+% change the sorting of the data matrix from fsaverage to schäfer200
+% look at the matrix only at the schäfer200 positions
+mat = mat(:,tmp_idx);
+
+
+
+% PLOT INDIVIDUAL EXPONENT
+%plot
+parcellation = fetch_parcellation('fslr32k', 'schaefer', 200);
+[surf_lh, surf_rh] = fetch_template_surface('fslr32k', 'layer', 'inflated');
+
+for i = 1:350
+data2plot = mat(i,:);
+
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+pause
+close all
+end
+
+
+
+% PLOT INDIVIDUAL EXPONENT
+%plot
+parcellation = fetch_parcellation('fslr32k', 'schaefer', 200);
+[surf_lh, surf_rh] = fetch_template_surface('fslr32k', 'layer', 'inflated');
+
+data2plot = zscore(trimmean(mat,1,1),[],2);
+
+vertex_data = nan(size(parcellation));
+for i = 1:200
+    vertex_data(parcellation == i) = data2plot(i);
+end
+
+obj = plot_hemispheres(vertex_data, {surf_lh, surf_rh});
+pause
+close all
+
+
+
+
+
+
+
+
